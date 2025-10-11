@@ -2,6 +2,7 @@ import serial
 import wave
 import struct
 import sys
+import time
 
 # Configuration
 SERIAL_PORT = '/dev/ttyACM0'  # Change to your port (COM3, /dev/ttyUSB0, etc.)
@@ -9,12 +10,14 @@ BAUD_RATE = 921600
 SAMPLE_RATE = 16000
 CHANNELS = 1
 SAMPLE_WIDTH = 2  # 16-bit
-OUTPUT_FILE = 'silence3.wav'
-DURATION_SECONDS = 40  # Recording duration
+OUTPUT_FILE = 'noise1s.wav'
+DURATION_SECONDS = 100  # Recording duration
 
 def record_audio():
     print(f"Opening serial port {SERIAL_PORT}...")
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+    time.sleep(1)  # Let Arduino reset and stabilize
+    ser.reset_input_buffer()  # Clear any startup noise
 
     # Calculate total samples needed
     total_samples = SAMPLE_RATE * DURATION_SECONDS

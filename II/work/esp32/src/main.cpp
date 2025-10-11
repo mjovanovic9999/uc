@@ -101,11 +101,11 @@
 #include <PubSubClient.h>
 
 // ====== WiFi ======
-const char* WIFI_SSID     = "Jovanovic";
-const char* WIFI_PASSWORD = "";
+const char* WIFI_SSID     = "test";
+const char* WIFI_PASSWORD = "test1234";
 
 // ====== MQTT Broker (Raspberry Pi) ======
-const char* MQTT_HOST = "192.168.0.17";   // <-- Replace with your Pi's IP
+const char* MQTT_HOST = "10.224.221.14";   // <-- Replace with your Pi's IP
 const uint16_t MQTT_PORT = 1883;          // Default MQTT port (no TLS)
 
 // MQTT Topics

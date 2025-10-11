@@ -232,6 +232,13 @@ void setup()
     while (!Serial)
         ;
 
+    Serial.printf("Chip Model: %s\n", ESP.getChipModel());
+    Serial.printf("Flash Size: %d MB\n", ESP.getFlashChipSize() / (1024 * 1024));
+    Serial.printf("PSRAM Size: %d MB\n", ESP.getPsramSize() / (1024 * 1024));
+    Serial.printf("Free PSRAM: %d bytes\n", ESP.getFreePsram());
+    Serial.printf("Total Heap: %d bytes\n", ESP.getHeapSize());
+    Serial.printf("Free Heap: %d bytes\n\n", ESP.getFreeHeap());
+
     Serial.println("Edge Impulse Inferencing Demo");
 
     ei_printf("Inferencing settings:\n");
@@ -253,9 +260,10 @@ void setup()
     strip.setBrightness(10);
     strip.begin();
     strip.show();
-    ei_printf("Recording...\n");
-
+    
     pinMode(LED_PIN, OUTPUT);
+    
+    ei_printf("Recording...\n");
 }
 
 void loop()

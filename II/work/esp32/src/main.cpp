@@ -1,7 +1,7 @@
 // #include <Arduino.h>
 // #include "DHT.h"
 
-// #define DHTPIN 4  
+// #define DHTPIN 4
 // #define DHTTYPE DHT11
 
 // DHT dht(DHTPIN, DHTTYPE);
@@ -46,7 +46,6 @@
 //   return;
 // }
 
-
 // #include <Adafruit_NeoPixel.h>
 
 // #define LED_PIN 48
@@ -68,7 +67,7 @@
 // Serial.printf("Total Heap: %d bytes\n", ESP.getHeapSize());
 // Serial.printf("Free Heap: %d bytes\n", ESP.getFreeHeap());
 
-// strip.setBrightness(10); 
+// strip.setBrightness(10);
 
 // strip.begin(); // Initialize
 // strip.show(); // Turn OFF all pixels initially
@@ -93,89 +92,107 @@
 // strip.setPixelColor(0, strip.Color(255, 255, 255)); // White
 // strip.show();
 // delay(1000);
-  
+
 // Serial.println("done");
 // }
 
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-// ====== WiFi ======
-const char* WIFI_SSID     = "test";
-const char* WIFI_PASSWORD = "test1234";
+const char *WIFI_SSID = "test";
+const char *WIFI_PASSWORD = "test1234";
 
-// ====== MQTT Broker (Raspberry Pi) ======
-const char* MQTT_HOST = "10.224.221.14";   // <-- Replace with your Pi's IP
-const uint16_t MQTT_PORT = 1883;          // Default MQTT port (no TLS)
+const char *MQTT_HOST = "10.224.221.14";
+const uint16_t MQTT_PORT = 1883;
 
-// MQTT Topics
-const char* PUB_TOPIC = "sensors/esp32s3/temperature";
-const char* SUB_TOPIC = "sensors/esp32s3/cmd";  // optional
+const char *PUB_TOPIC = "sensors/esp32s3/temperature";
+const char *SUB_TOPIC = "sensors/esp32s3/cmd";
 
 WiFiClient wifiClient;
 PubSubClient mqtt(wifiClient);
 
 unsigned long lastPublish = 0;
 
-// Handle incoming MQTT messages
-void onMqttMessage(char* topic, byte* payload, unsigned int length) {
+void onMqttMessage(char *topic, byte *payload, unsigned int length)
+{
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("]: ");
-  for (unsigned int i = 0; i < length; i++) {
+  for (unsigned int i = 0; i < length; i++)
+  {
     Serial.print((char)payload[i]);
   }
   Serial.println();
 }
 
-// Connect to Wi-Fi
-void connectWiFi() {
+void connectWiFi()
+{
   Serial.printf("Connecting to WiFi: %s\n", WIFI_SSID);
+
   WiFi.mode(WIFI_STA);
+  delay(1000);
+
+  WiFi.setTxPower(WIFI_POWER_5dBm);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  while (WiFi.status() != WL_CONNECTED) {
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
     delay(500);
     Serial.print('.');
   }
-  Serial.printf("\nWiFi connected, IP: %s\n", WiFi.localIP().toString().c_str());
+
+  Serial.println("Connecting");
+  Serial.printf("\nWiFi connected!\n");
+  Serial.printf("IP: %s\n", WiFi.localIP().toString().c_str());
+  Serial.printf("Signal: %d dBm\n", WiFi.RSSI());
 }
 
 // Connect to MQTT broker
-void connectMQTT() {
+void connectMQTT()
+{
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setCallback(onMqttMessage);
 
-  while (!mqtt.connected()) {
+  while (!mqtt.connected())
+  {
     String clientId = "esp32s3-" + String((uint32_t)ESP.getEfuseMac(), HEX);
     Serial.printf("Connecting to MQTT as %s ...\n", clientId.c_str());
-    if (mqtt.connect(clientId.c_str())) {
+    if (mqtt.connect(clientId.c_str()))
+    {
       Serial.println("MQTT connected!");
       mqtt.subscribe(SUB_TOPIC);
-    } else {
+    }
+    else
+    {
       Serial.printf("MQTT connection failed, rc=%d. Retrying in 2s...\n", mqtt.state());
       delay(2000);
     }
   }
 }
 
-void setup() {
+void setup()
+{
   Serial.begin(115200);
   delay(1000);
   connectWiFi();
   connectMQTT();
 }
 
-void loop() {
-  if (WiFi.status() != WL_CONNECTED) connectWiFi();
-  if (!mqtt.connected()) connectMQTT();
+void loop()
+{
+  if (WiFi.status() != WL_CONNECTED)
+    connectWiFi();
+  if (!mqtt.connected())
+    connectMQTT();
+
   mqtt.loop();
 
-  // Publish every 5 seconds
   unsigned long now = millis();
-  if (now - lastPublish >= 5000) {
+  if (now - lastPublish >= 5000)
+  {
     lastPublish = now;
 
-    float temperature = 25.0 + (float)(millis() % 1000) / 100.0;  // fake data
+    float temperature = 25.0 + (float)(millis() % 1000) / 100.0; // fake data
     char payload[64];
     snprintf(payload, sizeof(payload), "{\"temperature\": %.2f}", temperature);
 

@@ -50,9 +50,8 @@ class DbForwarder:
             
             logging.info(f"Received message on {msg.topic}: {data}")
             
-            point = Point("sensor_data")
+            point = Point(self.get_sensor_type(msg.topic))
             
-            point.tag("sensor_type", self.get_sensor_type(msg.topic))
             point.tag("device", "esp32-s3")
             
             for key, value in data.items():
@@ -65,9 +64,9 @@ class DbForwarder:
             logging.info(f"Data written to InfluxDB: {point.to_line_protocol()}")
             
         except json.JSONDecodeError as e:
-            logging.info(f"Error decoding JSON: {e}")
+            logging.error(f"Error decoding JSON: {e}")
         except Exception as e:
-            logging.info(f"Error processing message: {e}")
+            logging.error(f"Error processing message: {e}")
     
     def get_sensor_type(self, topic):
         if "mq2" in topic:

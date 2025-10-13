@@ -57,6 +57,19 @@ services:
     build: ./dbForwarder
     image: dbforwarder:latest 
     container_name: dbforwarder
+    restart: unless-stopped
+
     depends_on:
       - mosquitto
       - influxdb
+  
+  alertmanager:
+    build:
+      context: .
+      dockerfile: alertManager/Dockerfile
+    image: alertmanager:latest 
+    container_name: alertmanager
+    restart: unless-stopped
+
+    depends_on:
+      - mosquitto

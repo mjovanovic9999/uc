@@ -260,9 +260,9 @@ void setup()
     strip.setBrightness(10);
     strip.begin();
     strip.show();
-    
+
     pinMode(LED_PIN, OUTPUT);
-    
+
     ei_printf("Recording...\n");
 }
 
@@ -298,7 +298,7 @@ void loop()
             ei_printf_float(result.classification[ix].value);
             ei_printf("\n");
 
-            if (result.classification[ix].value > 0.8)
+            if (result.classification[ix].value > 0.85)
             {
                 if (strcmp(result.classification[ix].label, "go") == 0)
                 {

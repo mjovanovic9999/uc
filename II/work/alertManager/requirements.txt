@@ -1,0 +1,4 @@
+paho-mqtt
+tflite-runtime
+numpy<2
+scikit-learn

@@ -32,6 +32,9 @@ const char *PUB_MQ2_TOPIC = "sensors/mq2";
 const char *PUB_DHT11_TOPIC = "sensors/dht11";
 const char *SUB_ALERTS_TOPIC = "alerts";
 
+const char *PUB_COMMANDS_TOPIC = "esp32/status";
+const char *SUB_COMMANDS_TOPIC = "esp32/commands";
+
 const char *CLIENT_ID = "esp32-s3";
 
 unsigned long lastPublish = 0;
@@ -398,15 +401,15 @@ void loop()
 
   if (++print_results >= (EI_CLASSIFIER_SLICES_PER_MODEL_WINDOW))
   {
-    ei_printf("Predictions ");
-    ei_printf("(DSP: %d ms., Classification: %d ms., Anomaly: %d ms.)",
-              result.timing.dsp, result.timing.classification, result.timing.anomaly);
-    ei_printf(": \n");
+    // ei_printf("Predictions ");
+    // ei_printf("(DSP: %d ms., Classification: %d ms., Anomaly: %d ms.)",
+    //           result.timing.dsp, result.timing.classification, result.timing.anomaly);
+    // ei_printf(": \n");
     for (size_t ix = 0; ix < EI_CLASSIFIER_LABEL_COUNT; ix++)
     {
-      ei_printf("    %s: ", result.classification[ix].label);
-      ei_printf_float(result.classification[ix].value);
-      ei_printf("\n");
+      // ei_printf("    %s: ", result.classification[ix].label);
+      // ei_printf_float(result.classification[ix].value);
+      // ei_printf("\n");
 
       if (result.classification[ix].value > 0.85)
       {
@@ -473,13 +476,13 @@ void loop()
       char payload_dht11[64];
       snprintf(payload_dht11, sizeof(payload_dht11), "{\"temperature\": %.2f,\"humidity\": %.2f}", temperature, humidity);
 
-      bool success = mqtt.publish(PUB_DHT11_TOPIC, payload_dht11);
+      bool success = mqtt.publish(PUB_DHT11_TOPIC, payload_dht11, true);
       Serial.printf("Publish %s: %s\n", success ? "OK" : "FAILED", payload_dht11);
 
       char payload_mq2[64];
       snprintf(payload_mq2, sizeof(payload_mq2), "{\"quality\": %.2f}", airQuality);
 
-      success = mqtt.publish(PUB_MQ2_TOPIC, payload_mq2);
+      success = mqtt.publish(PUB_MQ2_TOPIC, payload_mq2, true);
       Serial.printf("Publish %s: %s\n", success ? "OK" : "FAILED", payload_mq2);
     }
   }

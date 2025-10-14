@@ -22,8 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun SettingsDialog(ioTViewModel: IoTViewModel, onDismiss: () -> Unit) {
-    val config by ioTViewModel.config.collectAsState()
+fun SettingsDialog(dashboardViewModel: DashboardViewModel, onDismiss: () -> Unit) {
+    val config by dashboardViewModel.config.collectAsState()
     var serverUrl by remember { mutableStateOf(config.serverUrl) }
 
     AlertDialog(
@@ -41,11 +41,11 @@ fun SettingsDialog(ioTViewModel: IoTViewModel, onDismiss: () -> Unit) {
                 Text("Commands:", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    Button(onClick = { ioTViewModel.sendCommand("{\"action\":\"start\"}") }) {
+                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"start\"}") }) {
                         Text("Start")
                     }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { ioTViewModel.sendCommand("{\"action\":\"stop\"}") }) {
+                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"stop\"}") }) {
                         Text("Stop")
                     }
                 }
@@ -53,7 +53,7 @@ fun SettingsDialog(ioTViewModel: IoTViewModel, onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = {
-                ioTViewModel.updateServerUrl(serverUrl)
+                dashboardViewModel.updateServerUrl(serverUrl)
                 onDismiss()
             }) {
                 Text("Save")

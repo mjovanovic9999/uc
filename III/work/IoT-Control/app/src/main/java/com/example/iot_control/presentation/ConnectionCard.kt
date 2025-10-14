@@ -23,7 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ConnectionCard(isConnected: Boolean, ioTViewModel: IoTViewModel) {
+fun ConnectionCard(isConnected: Boolean, dashboardViewModel: DashboardViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -52,17 +52,17 @@ fun ConnectionCard(isConnected: Boolean, ioTViewModel: IoTViewModel) {
                     fontWeight = FontWeight.Bold
                 )
             }
-            Button(
-                onClick = {
-                    if (isConnected) ioTViewModel.disconnect() else ioTViewModel.connect()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.White,
-                    contentColor = if (isConnected) Color(0xFF1B5E20) else Color(0xFFB71C1C)
-                )
-            ) {
-                Text(if (isConnected) "Disconnect" else "Connect")
-            }
+//            Button(
+//                onClick = {
+//                    if (isConnected) dashboardViewModel.disconnect() else dashboardViewModel.connect()
+//                },
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = Color.White,
+//                    contentColor = if (isConnected) Color(0xFF1B5E20) else Color(0xFFB71C1C)
+//                )
+//            ) {
+//                Text(if (isConnected) "Disconnect" else "Connect")
+//            }
         }
     }
 }

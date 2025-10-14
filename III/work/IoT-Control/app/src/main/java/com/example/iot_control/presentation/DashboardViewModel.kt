@@ -1,10 +1,14 @@
 package com.example.iot_control.presentation
 
+import android.app.Application
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import com.example.iot_control.core.WebSocketManager
 import com.example.iot_control.domain.ConnectionConfig
 import com.example.iot_control.domain.SensorData
+import com.example.iot_control.service.WebSocketServiceManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,7 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class IoTViewModel : ViewModel() {
+class DashboardViewModel(application: Application) : AndroidViewModel(application) {
     private val _sensorDataList = MutableStateFlow<List<SensorData>>(emptyList())
     val sensorDataList: StateFlow<List<SensorData>> = _sensorDataList.asStateFlow()
 
@@ -26,9 +30,10 @@ class IoTViewModel : ViewModel() {
     private val _alerts = MutableStateFlow<List<String>>(emptyList())
     val alerts: StateFlow<List<String>> = _alerts.asStateFlow()
 
+    private val serviceManager = WebSocketServiceManager(application)
     private var wsManager: WebSocketManager? = null
 
-    fun connect() {
+    fun connectInApp() {
         wsManager = WebSocketManager(_config.value.serverUrl).apply {
             onMessageReceived = { message ->
                 Log.d("IoTViewModel", "Message received: $message")
@@ -42,8 +47,17 @@ class IoTViewModel : ViewModel() {
         }
     }
 
+    // Use this for background connections (service)
+    fun connectInBackground() {
+        serviceManager.startService(_config.value.serverUrl)
+        _isConnected.value = true
+    }
+
+
+
     fun disconnect() {
         wsManager?.disconnect()
+        serviceManager.stopService()
         _isConnected.value = false
     }
 
@@ -57,6 +71,7 @@ class IoTViewModel : ViewModel() {
 
     private fun parseMessage(message: String) {
         try {
+            Log.d("parse", message)
             val json = JSONObject(message)
             val topic = json.optString("topic", "unknown")
             val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
@@ -64,7 +79,7 @@ class IoTViewModel : ViewModel() {
             val sensorData = when {
                 topic.contains("dht11") -> SensorData(
                     timestamp = timestamp,
-                    topic = "DHT11",
+                    topic = "h",
                     temperature = json.optDouble("temperature", 0.0).toFloat(),
                     humidity = json.optDouble("humidity", 0.0).toFloat()
                 )

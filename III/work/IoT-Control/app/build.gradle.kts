@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlinSerialization)
+
 }
 
 android {
@@ -52,4 +54,6 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.okhttp3)
     implementation(libs.icons)
+    implementation(libs.kotlinx.serialization.json)
+
 }

@@ -65,9 +65,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         _config.value = _config.value.copy(serverUrl = url)
     }
 
-    fun sendCommand(command: String) {
-        wsManager?.sendMessage(command)
-    }
+//    fun sendCommand(command: String) {
+//        wsManager?.sendMessage(command)
+//    }
 
     private fun parseMessage(message: String) {
         try {

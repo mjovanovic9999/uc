@@ -41,13 +41,13 @@ fun SettingsDialog(dashboardViewModel: DashboardViewModel, onDismiss: () -> Unit
                 Text("Commands:", fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row {
-                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"start\"}") }) {
-                        Text("Start")
-                    }
+//                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"start\"}") }) {
+//                        Text("Start")
+//                    }
                     Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"stop\"}") }) {
-                        Text("Stop")
-                    }
+//                    Button(onClick = { dashboardViewModel.sendCommand("{\"action\":\"stop\"}") }) {
+//                        Text("Stop")
+//                    }
                 }
             }
         },

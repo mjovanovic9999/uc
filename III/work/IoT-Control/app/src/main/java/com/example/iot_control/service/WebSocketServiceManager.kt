@@ -6,8 +6,10 @@ import android.content.Intent
 import android.util.Log
 
 class WebSocketServiceManager(private val context: Context) {
+    private var isRunning = false
     fun startService(serverUrl: String) {
-        Log.d("wsmngr","started")
+        isRunning = true
+        Log.d("wsmngr", "started")
         val intent = Intent(context, WebSocketForegroundService::class.java).apply {
             putExtra("server_url", serverUrl)
         }
@@ -15,12 +17,10 @@ class WebSocketServiceManager(private val context: Context) {
     }
 
     fun stopService() {
+        isRunning = false
         val intent = Intent(context, WebSocketForegroundService::class.java)
         context.stopService(intent)
     }
 
-    fun isServiceRunning(): Boolean {
-        // You can implement this by tracking service state
-        return true // Simplified - implement proper check
-    }
+    fun isServiceRunning(): Boolean = isRunning
 }

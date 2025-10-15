@@ -26,7 +26,7 @@ class WebSocketManager(private val url: String) {
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 isConnected = true
-                onConnectionChange?.invoke(true) 
+                onConnectionChange?.invoke(true)
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {

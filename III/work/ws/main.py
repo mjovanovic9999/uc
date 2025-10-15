@@ -49,16 +49,14 @@ class MQTTWebSocketBridge:
             f"MQTT message received - Topic: {msg.topic}, Payload: {msg.payload}")
         try:
             payload = msg.payload.decode('utf-8')
-            data = {
-                'topic': msg.topic,
-                'timestamp': datetime.now().isoformat(),
-                'data': json.loads(payload)
-            }
-            # asyncio.create_task(self.broadcast_to_websockets(data))
+            data=json.loads(payload)
+            logging.info(
+            f"MQTT {data}")
             asyncio.run_coroutine_threadsafe(
                 self.broadcast_to_websockets(data),
                 self.loop
             )
+
         except Exception as e:
             logging.error(f"Error processing MQTT message: {e}")
 

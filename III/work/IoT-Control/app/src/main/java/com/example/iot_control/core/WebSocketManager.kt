@@ -1,7 +1,9 @@
+
 package com.example.iot_control.core
 
-import android.content.Context
 import android.util.Log
+import com.example.iot_control.domain.AlertType
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -19,8 +21,10 @@ class WebSocketManager(private val url: String) {
     var onMessageReceived: ((String) -> Unit)? = null
     var onConnectionChange: ((Boolean) -> Unit)? = null
     private var isConnected = false
+
     fun connect() {
         if (isConnected) return
+
         val request = Request.Builder().url(url).build()
         Log.d("WebSocket", "Connecting to $url")
         webSocket = client.newWebSocket(request, object : WebSocketListener() {
@@ -30,9 +34,10 @@ class WebSocketManager(private val url: String) {
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
-                Log.d("WebSocket", "Message: $text")
-                onMessageReceived?.invoke(text)
-//                showNotification(text)
+                Log.d("WebSocket", "Detected: $text")
+                val alert = Json.decodeFromString<AlertType>(text)
+
+                onMessageReceived?.invoke(alert.type)
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
@@ -49,18 +54,7 @@ class WebSocketManager(private val url: String) {
         })
     }
 
-    fun sendMessage(message: String) {
-        webSocket?.send(message)
-    }
-
     fun disconnect() {
         webSocket?.close(1000, "User disconnect")
     }
-
-    fun isConnected(): Boolean = isConnected
-
-//    private fun showNotification(message: String) {
-//        val notificationHandler = NotificationHandler(context)
-//        notificationHandler.showSimpleNotification("New Message", message)
-//    }
 }

@@ -1,5 +1,6 @@
 package com.example.iot_control.service
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
@@ -44,6 +45,7 @@ class WebSocketForegroundService : Service() {
         notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         createServiceNotificationChannel()
         createMessageNotificationChannel()
+
         Log.d("WSService", "Service created")
     }
 
@@ -52,13 +54,12 @@ class WebSocketForegroundService : Service() {
 
         val serverUrl = intent?.getStringExtra(EXTRA_SERVER_URL) ?: WS_URL
 
-        // CRITICAL: Start foreground IMMEDIATELY
         try {
             val notification = createNotification("Starting IoT service...")
             startForeground(
                 NOTIFICATION_ID,
                 notification,
-//                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
 
             Log.d("WSService", "Started in foreground")
@@ -72,8 +73,8 @@ class WebSocketForegroundService : Service() {
             webSocketManager = WebSocketManager(serverUrl).apply {
                 onMessageReceived = { message ->
                     _lastMessage.value = message
-                    updateNotification("Connected - Last: ${message.take(25)}...")
-                    showMessageNotification("New Message", message)
+//                    updateNotification("Connected")
+                    showMessageNotification("New Alert: " + message.replaceFirstChar { c -> c.uppercase() })
                 }
                 onConnectionChange = { connected ->
                     _isConnected.value = connected
@@ -88,6 +89,7 @@ class WebSocketForegroundService : Service() {
         return START_STICKY
     }
 
+    @SuppressLint("ScheduleExactAlarm")
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         val restartIntent = Intent(applicationContext, WebSocketForegroundService::class.java)
@@ -110,30 +112,11 @@ class WebSocketForegroundService : Service() {
 
     override fun onDestroy() {
         Log.d("WSService", "Service destroyed")
+
+//        releaseWakeLock()
+
         webSocketManager?.disconnect()
         super.onDestroy()
-    }
-
-
-//    override fun stopForeground(){}
-
-    fun sendMessage(message: String) {
-        webSocketManager?.sendMessage(message)
-    }
-
-    fun reconnect(serverUrl: String) {
-        webSocketManager?.disconnect()
-        webSocketManager = WebSocketManager(serverUrl).apply {
-            onMessageReceived = { message ->
-                _lastMessage.value = message
-                updateNotification("Connected - Last: ${message.take(25)}...")
-                showMessageNotification("New Message", message)
-            }
-            onConnectionChange = { connected ->
-                _isConnected.value = connected
-            }
-            connect()
-        }
     }
 
     private fun createServiceNotificationChannel() {
@@ -161,17 +144,17 @@ class WebSocketForegroundService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun showMessageNotification(title: String, message: String) {
+    private fun showMessageNotification(message: String) {
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
-            /*PendingIntent.FLAG_UPDATE_CURRENT or */PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notification = NotificationCompat.Builder(this, MESSAGE_CHANNEL_ID)
-            .setContentTitle(title)
+            .setContentTitle("Alert")
             .setContentText(message)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -185,15 +168,15 @@ class WebSocketForegroundService : Service() {
 
     private fun createNotification(contentText: String): Notification {
         val intent = Intent(this, MainActivity::class.java).apply {
-//            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         val pendingIntent = PendingIntent.getActivity(
             this, 0, intent,
-            /*PendingIntent.FLAG_UPDATE_CURRENT or */PendingIntent.FLAG_IMMUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("IoT Control Active")
+            .setContentTitle("IoT Control Is Active")
             .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
@@ -207,8 +190,10 @@ class WebSocketForegroundService : Service() {
     private fun updateNotification(contentText: String) {
         try {
             val notification = createNotification(contentText)
-//            notificationManager.notify(NOTIFICATION_ID, notification)
-            startForeground(NOTIFICATION_ID, notification,ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            startForeground(
+                NOTIFICATION_ID, notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
         } catch (e: Exception) {
             Log.e("WSService", "Failed to update notification", e)
         }

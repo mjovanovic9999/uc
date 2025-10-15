@@ -1,3 +1,5 @@
+
+
 package com.example.iot_control.presentation
 
 import android.app.Application
@@ -33,27 +35,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val serviceManager = WebSocketServiceManager(application)
     private var wsManager: WebSocketManager? = null
 
-    fun connectInApp() {
-        wsManager = WebSocketManager(_config.value.serverUrl).apply {
-            onMessageReceived = { message ->
-                Log.d("IoTViewModel", "Message received: $message")
-                parseMessage(message)
-            }
-            onConnectionChange = { connected ->
-                Log.d("IoTViewModel", "Connection state changed: $connected")
-                _isConnected.value = connected
-            }
-            connect()
-        }
-    }
+//    fun connectInApp() {
+//        wsManager = WebSocketManager(_config.value.serverUrl).apply {
+//            onMessageReceived = { message ->
+//                Log.d("IoTViewModel", "Message received: $message")
+//                parseMessage(message)
+//            }
+//            onConnectionChange = { connected ->
+//                Log.d("IoTViewModel", "Connection state changed: $connected")
+//                _isConnected.value = connected
+//            }
+//            connect()
+//        }
+//    }
 
     // Use this for background connections (service)
     fun connectInBackground() {
         serviceManager.startService(_config.value.serverUrl)
         _isConnected.value = true
     }
-
-
 
     fun disconnect() {
         wsManager?.disconnect()
@@ -69,47 +69,49 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 //        wsManager?.sendMessage(command)
 //    }
 
-    private fun parseMessage(message: String) {
-        try {
-            Log.d("parse", message)
-            val json = JSONObject(message)
-            val topic = json.optString("topic", "unknown")
-            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+//    private fun parseMessage(message: String) {
+//        try {
+//            Log.d("parse", message)
+//            val json = JSONObject(message)
+//            val topic = json.optString("topic", "unknown")
+//            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+//
+//            val sensorData = when {
+//                topic.contains("dht11") -> SensorData(
+//                    timestamp = timestamp,
+//                    topic = "h",
+//                    temperature = json.optDouble("temperature", 0.0).toFloat(),
+//                    humidity = json.optDouble("humidity", 0.0).toFloat()
+//                )
+//
+//                topic.contains("mq2") -> SensorData(
+//                    timestamp = timestamp,
+//                    topic = "MQ2",
+//                    gasLevel = json.optInt("gas_level", 0)
+//                )
+//
+//                topic.contains("alert") -> {
+//                    val alertMsg = json.optString("message", "Alert detected")
+//                    _alerts.value = listOf(alertMsg) + _alerts.value.take(9)
+//                    SensorData(
+//                        timestamp = timestamp,
+//                        topic = "ALERT",
+//                        alertType = alertMsg
+//                    )
+//                }
+//
+//                else -> null
+//            }
+//
+//            sensorData?.let {
+//                _sensorDataList.value = listOf(it) + _sensorDataList.value.take(49)
+//            }
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
 
-            val sensorData = when {
-                topic.contains("dht11") -> SensorData(
-                    timestamp = timestamp,
-                    topic = "h",
-                    temperature = json.optDouble("temperature", 0.0).toFloat(),
-                    humidity = json.optDouble("humidity", 0.0).toFloat()
-                )
-
-                topic.contains("mq2") -> SensorData(
-                    timestamp = timestamp,
-                    topic = "MQ2",
-                    gasLevel = json.optInt("gas_level", 0)
-                )
-
-                topic.contains("alert") -> {
-                    val alertMsg = json.optString("message", "Alert detected")
-                    _alerts.value = listOf(alertMsg) + _alerts.value.take(9)
-                    SensorData(
-                        timestamp = timestamp,
-                        topic = "ALERT",
-                        alertType = alertMsg
-                    )
-                }
-
-                else -> null
-            }
-
-            sensorData?.let {
-                _sensorDataList.value = listOf(it) + _sensorDataList.value.take(49)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
+    fun isWSConnected(): Boolean= serviceManager.isServiceRunning()
 
     override fun onCleared() {
         super.onCleared()

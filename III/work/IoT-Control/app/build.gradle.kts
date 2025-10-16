@@ -3,7 +3,6 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlinSerialization)
-
 }
 
 android {
@@ -37,6 +36,16 @@ android {
     buildFeatures {
         compose = true
     }
+    packaging {
+        resources {
+            excludes.add("META-INF/INDEX.LIST")
+            excludes.add("META-INF/LICENSE")
+            excludes.add("META-INF/LICENSE.txt")
+            excludes.add("META-INF/io.netty.versions.properties")
+            excludes.add("META-INF/NOTICE")
+            excludes.add("META-INF/NOTICE.txt")
+        }
+    }
 }
 
 dependencies {
@@ -55,5 +64,9 @@ dependencies {
     implementation(libs.okhttp3)
     implementation(libs.icons)
     implementation(libs.kotlinx.serialization.json)
-
+    implementation(libs.hive.mq)
+//    implementation(libs.paho.client)
+//    implementation(libs.paho.service)
+//    implementation(libs.local.broadcast.manager)
+//    implementation(libs.legacy.support.v4)
 }

@@ -17,6 +17,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.example.iot_control.MainActivity
 import com.example.iot_control.R
+import com.example.iot_control.core.Constants.EXTRA_WS_SERVER_URL
 import com.example.iot_control.core.Constants.WS_URL
 import com.example.iot_control.core.WebSocketManager
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,7 +53,7 @@ class WebSocketForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("WSService", "onStartCommand called")
 
-        val serverUrl = intent?.getStringExtra(EXTRA_SERVER_URL) ?: WS_URL
+        val serverUrl = intent?.getStringExtra(EXTRA_WS_SERVER_URL) ?: WS_URL
 
         try {
             val notification = createNotification("Starting IoT service...")
@@ -73,7 +74,6 @@ class WebSocketForegroundService : Service() {
             webSocketManager = WebSocketManager(serverUrl).apply {
                 onMessageReceived = { message ->
                     _lastMessage.value = message
-//                    updateNotification("Connected")
                     showMessageNotification("New Alert: " + message.replaceFirstChar { c -> c.uppercase() })
                 }
                 onConnectionChange = { connected ->
@@ -112,8 +112,6 @@ class WebSocketForegroundService : Service() {
 
     override fun onDestroy() {
         Log.d("WSService", "Service destroyed")
-
-//        releaseWakeLock()
 
         webSocketManager?.disconnect()
         super.onDestroy()
@@ -200,7 +198,6 @@ class WebSocketForegroundService : Service() {
     }
 
     companion object {
-        const val EXTRA_SERVER_URL = "server_url"
         private const val CHANNEL_ID = "iot_websocket_service"
         private const val MESSAGE_CHANNEL_ID = "notification_channel_id"
         private const val NOTIFICATION_ID = 1

@@ -1,12 +1,14 @@
 package com.example.iot_control.presentation
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -17,22 +19,31 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.iot_control.presentation.cards.AlertCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen() {
     val dashboardViewModel: DashboardViewModel = viewModel()
-    val sensorDataList by dashboardViewModel.sensorDataList.collectAsState()
-    val alerts by dashboardViewModel.alerts.collectAsState()
+    val dht11List by dashboardViewModel.DHT11DataList.collectAsState()
+    val mq2List by dashboardViewModel.MQ2DataList.collectAsState()
+    val alert by dashboardViewModel.alerts.collectAsState()
     var showSettings by remember { mutableStateOf(false) }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            dashboardViewModel.disconnectMqtt()
+        }
+    }
 
     MaterialTheme(colorScheme = darkColorScheme()) {
         Scaffold(
@@ -56,26 +67,13 @@ fun DashboardScreen() {
                     .padding(padding)
                     .background(MaterialTheme.colorScheme.background)
             ) {
-//                ConnectionCard(isConnected, dashboardViewModel)
-                if (alerts.isNotEmpty()) {
-                    AlertsCard(alerts)
+                NotificationPermissionRequest()
+
+                if (alert.isNotEmpty() && alert != "normal") {
+                    AlertCard(alert)
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-
-                   Button(
-                        onClick = {
-                            dashboardViewModel.connectInBackground()
-                            // Show message that service will continue in background
-                        },
-                        enabled = !isConnected
-                    ) {
-                        Text("Connect (App)")
-                    }
-
-                // Connection status with service info
-
-                RequestPermission()
-                SensorDataList(sensorDataList)
-
+                SensorDataList(dht11List, mq2List)
             }
 
             if (showSettings) {
@@ -84,7 +82,6 @@ fun DashboardScreen() {
                     onDismiss = { showSettings = false }
                 )
             }
-
         }
     }
 }

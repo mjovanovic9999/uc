@@ -39,11 +39,11 @@ fun SettingsDialog(
     dashboardViewModel: DashboardViewModel, onDismiss: () -> Unit
 ) {
     val mcuState by dashboardViewModel.mcuState.collectAsState()
-    val measurePeriod by dashboardViewModel.measurePeriod.collectAsState()
+//    val measurePeriod by dashboardViewModel.measurePeriod.collectAsState()
     val subscribedAlerts by dashboardViewModel.subscribedAlerts.collectAsState()
     val notificationsEnabled by dashboardViewModel.notificationsEnabled.collectAsState()
 
-    var periodInput by remember { mutableStateOf(measurePeriod.toString()) }
+//    var periodInput by remember { mutableStateOf(measurePeriod.toString()) }
 
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -70,7 +70,7 @@ fun SettingsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    listOf("standby", "measure", "forward").forEach { state ->
+                    listOf("stop", "go", "forward").forEach { state ->
                         FilterChip(
                             selected = mcuState == state,
                             onClick = { dashboardViewModel.setMcuState(state) },
@@ -81,34 +81,34 @@ fun SettingsDialog(
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                Text(
-                    text = "Measure Period (seconds)",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = periodInput,
-                    onValueChange = {
-                        periodInput = it
-                        it.toIntOrNull()?.let { period ->
-                            if (period > 0) dashboardViewModel.setMeasurePeriod(period)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
+//
+//                Text(
+//                    text = "Measure Period (seconds)",
+//                    fontSize = 16.sp,
+//                    fontWeight = FontWeight.SemiBold
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//                OutlinedTextField(
+//                    value = periodInput,
+//                    onValueChange = {
+//                        periodInput = it
+//                        it.toIntOrNull()?.let { period ->
+//                            if (period > 0) dashboardViewModel.setMeasurePeriod(period)
+//                        }
+//                    },
+//                    modifier = Modifier.fillMaxWidth(),
+//                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+//                    singleLine = true
+//                )
+//
+//                Spacer(modifier = Modifier.height(24.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Alert Notifications",
+                        text = "Notification Alert Types",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )

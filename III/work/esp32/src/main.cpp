@@ -8,6 +8,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <ArduinoJson.h>
 
+#include <nvs_flash.h>
+
 #define I2S_WS 14
 #define I2S_SD 13
 #define I2S_SCK 12
@@ -25,17 +27,20 @@
 const char *WIFI_SSID = "test";
 const char *WIFI_PASSWORD = "test1234";
 
-const char *MQTT_HOST = "10.224.221.14";
+const char *MQTT_HOST = "10.42.0.1";
 const uint16_t MQTT_PORT = 1883;
 
 const char *PUB_MQ2_TOPIC = "sensors/mq2";
 const char *PUB_DHT11_TOPIC = "sensors/dht11";
-const char *SUB_ALERTS_TOPIC = "alerts";
+const char *SUB_ALERTS_TOPIC = "alerts/all";
 
-const char *PUB_COMMANDS_TOPIC = "esp32/status";
-const char *SUB_COMMANDS_TOPIC = "esp32/commands";
+const char *PUB_STATUS_TOPIC = "esp32/status";
+const char *SUB_COMMANDS_TOPIC = "esp32/cmd";
+const char *SUB_BLINK_TOPIC = "esp32/cmd/blink";
 
 const char *CLIENT_ID = "esp32-s3";
+
+const int MEASURE_PERIOD = 10000;
 
 unsigned long lastPublish = 0;
 bool shouldReadSensor = false;
@@ -88,7 +93,8 @@ void connectWiFi()
   WiFi.mode(WIFI_STA);
   delay(1000);
 
-  WiFi.setTxPower(WIFI_POWER_5dBm);
+  // WiFi.setTxPower(WIFI_POWER_5dBm);
+  WiFi.setTxPower(WIFI_POWER_2dBm);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
   while (WiFi.status() != WL_CONNECTED)
@@ -103,23 +109,13 @@ void connectWiFi()
   Serial.printf("Signal: %d dBm\n", WiFi.RSSI());
 }
 
-void onMqttMessage(char *topic, byte *payload, unsigned int length)
+void handleAlert(const String &message)
 {
-  String message;
-  for (unsigned int i = 0; i < length; i++)
-  {
-    message += (char)payload[i];
-  }
-  Serial.print("MQTT message [");
-  Serial.print(topic);
-  Serial.print("] ");
-  Serial.println(message);
-
   StaticJsonDocument<200> doc;
   DeserializationError error = deserializeJson(doc, message);
   if (error)
   {
-    Serial.println("Failed to parse JSON");
+    Serial.println("Failed to parse JSON for alert");
     return;
   }
 
@@ -143,6 +139,84 @@ void onMqttMessage(char *topic, byte *payload, unsigned int length)
   }
 }
 
+void handleCmd(const String &message)
+{
+  if (message == "stop")
+  {
+    Serial.println("Received stop");
+    strip.setPixelColor(0, strip.Color(255, 0, 0));
+    strip.show();
+    shouldReadSensor = false;
+    shouldForward = false;
+  }
+  else if (message == "go")
+  {
+    Serial.println("Received go");
+    strip.setPixelColor(0, strip.Color(0, 255, 0));
+    strip.show();
+    shouldReadSensor = true;
+    shouldForward = false;
+  }
+  else if (message == "forward")
+  {
+    Serial.println("Received forward");
+    strip.setPixelColor(0, strip.Color(255, 255, 255));
+    strip.show();
+    shouldReadSensor = true;
+    shouldForward = true;
+  }
+  else
+  {
+    Serial.println("Unknown command");
+  }
+}
+
+void handleCmdBlink()
+{
+  Serial.println("Blink command received");
+  strip.setBrightness(1);
+  strip.show();
+  delay(100);
+  strip.setBrightness(10);
+  strip.show();
+}
+
+void onMqttMessage(char *topic, byte *payload, unsigned int length)
+{
+  String message;
+  for (unsigned int i = 0; i < length; i++)
+  {
+    message += (char)payload[i];
+  }
+  Serial.print("MQTT message [");
+  Serial.print(topic);
+  Serial.print("] ");
+  Serial.println(message);
+
+  if (strcmp(topic, SUB_ALERTS_TOPIC) == 0)
+  {
+    handleAlert(message);
+  }
+  else if (strcmp(topic, SUB_COMMANDS_TOPIC) == 0)
+  {
+    handleCmd(message);
+  }
+  else if (strcmp(topic, SUB_BLINK_TOPIC) == 0)
+  {
+    handleCmdBlink();
+  }
+}
+
+void publishState(const char *state)
+{
+  char payload[10];
+  strncpy(payload, state, sizeof(payload) - 1);
+  payload[sizeof(payload) - 1] = '\0';
+
+  bool success = mqtt.publish(PUB_STATUS_TOPIC, payload, true);
+  Serial.printf("Publish %s to %s: %s\n", success ? "OK" : "FAILED", PUB_STATUS_TOPIC, payload);
+}
+
 void connectMQTT()
 {
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
@@ -154,6 +228,8 @@ void connectMQTT()
     {
       Serial.println("MQTT connected!");
       mqtt.subscribe(SUB_ALERTS_TOPIC);
+      mqtt.subscribe(SUB_COMMANDS_TOPIC);
+      mqtt.subscribe(SUB_BLINK_TOPIC);
     }
     else
     {
@@ -353,6 +429,13 @@ void setup()
   while (!Serial)
     ;
 
+  strip.setBrightness(10);
+  strip.begin();
+  strip.setPixelColor(0, strip.Color(0, 0, 0));
+  strip.show();
+  
+  delay(1000);  
+  
   connectWiFi();
   connectMQTT();
   dht.begin();
@@ -369,6 +452,7 @@ void setup()
 
   strip.setBrightness(10);
   strip.begin();
+  strip.setPixelColor(0, strip.Color(255, 0, 0));
   strip.show();
 
   pinMode(LED_PIN, OUTPUT);
@@ -420,6 +504,7 @@ void loop()
           strip.show();
           shouldReadSensor = true;
           shouldForward = false;
+          publishState("go");
         }
         else if (strcmp(result.classification[ix].label, "stop") == 0)
         {
@@ -428,6 +513,7 @@ void loop()
           strip.show();
           shouldReadSensor = false;
           shouldForward = false;
+          publishState("stop");
         }
         else if (strcmp(result.classification[ix].label, "forward") == 0)
         {
@@ -436,6 +522,7 @@ void loop()
           strip.show();
           shouldReadSensor = true;
           shouldForward = true;
+          publishState("forward");
         }
       }
     }
@@ -469,7 +556,7 @@ void loop()
   if (shouldForward)
   {
     unsigned long now = millis();
-    if (now - lastPublish >= 5000)
+    if (now - lastPublish >= MEASURE_PERIOD)
     {
       lastPublish = now;
 

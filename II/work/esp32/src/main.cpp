@@ -30,7 +30,7 @@ const uint16_t MQTT_PORT = 1883;
 
 const char *PUB_MQ2_TOPIC = "sensors/mq2";
 const char *PUB_DHT11_TOPIC = "sensors/dht11";
-const char *SUB_ALERTS_TOPIC = "alerts";
+const char *SUB_ALERTS_TOPIC = "alerts/all";
 
 const char *CLIENT_ID = "esp32-s3";
 

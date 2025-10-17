@@ -35,7 +35,11 @@ class WebSocketManager(private val url: String) {
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 Log.d("WebSocket", "Detected: $text")
-                val alert = Json.decodeFromString<AlertType>(text)
+
+                val json = Json {
+                    ignoreUnknownKeys = true
+                }
+                val alert = json.decodeFromString<AlertType>(text)
 
                 onMessageReceived?.invoke(alert.type)
             }

@@ -74,7 +74,7 @@ class WebSocketForegroundService : Service() {
             webSocketManager = WebSocketManager(serverUrl).apply {
                 onMessageReceived = { message ->
                     _lastMessage.value = message
-                    showMessageNotification("New Alert: " + message.replaceFirstChar { c -> c.uppercase() })
+                    showMessageNotification("New Alert: " + message.replace("_"," ").replaceFirstChar { c -> c.uppercase() })
                 }
                 onConnectionChange = { connected ->
                     _isConnected.value = connected
@@ -175,7 +175,7 @@ class WebSocketForegroundService : Service() {
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("IoT Control Is Active")
-            .setContentText(contentText)
+//            .setContentText(contentText)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pendingIntent)
             .setOngoing(true)

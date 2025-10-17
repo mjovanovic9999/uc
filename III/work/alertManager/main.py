@@ -8,6 +8,19 @@ import logging
 MQTT_BROKER = "mosquitto"
 MQTT_PORT = 1883
 
+LABELS = ['normal', 'gas_leak', 'fire', 'high_humidity']
+ALL_ALERTS= "alerts/all"
+SELECTED_ALERTS= "alerts/selected"
+
+SELECT_ALERTS= "alerts/select"
+selected_alerts = {'normal', 'gas_leak', 'fire', 'high_humidity'}
+
+sensor_data = {'mq2': 0, 'temperature': 22, 'humidity': 45}
+
+current_label = "normal"
+previous_label = "normal"
+
+
 interpreter = tflite.Interpreter(model_path="sensor_model.tflite")
 interpreter.allocate_tensors()
 input_details = interpreter.get_input_details()
@@ -15,13 +28,6 @@ output_details = interpreter.get_output_details()
 
 with open('scaler.pkl', 'rb') as f:
     scaler = pickle.load(f)
-
-LABELS = ['normal', 'gas_leak', 'fire', 'high_humidity']
-
-sensor_data = {'mq2': 0, 'temperature': 22, 'humidity': 45}
-
-current_label = "normal"
-previous_label = "normal"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,12 +56,32 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe("sensors/mq2")
     client.subscribe("sensors/dht11")
 
+    client.subscribe(SELECT_ALERTS)
+    logging.info(f"Subscribed to {SELECT_ALERTS} for alert preferences")
+
 
 def on_message(client, userdata, msg):
-    global current_label, previous_label
+    global current_label, previous_label,selected_alerts
     try:
+        
+        if msg.topic == SELECT_ALERTS:
+            payload = msg.payload.decode().strip()
+            
+            if payload == ".":
+                selected_alerts = set()
+                return
+            
+            data = [label.strip() for label in payload.split(",") if label.strip() in LABELS]
+            if data:
+                selected_alerts = set(data)
+                logging.info(f"Updated subscribed alerts: {selected_alerts}")
+            else:
+                logging.warning(f"No valid labels in payload: {payload}")
+            return
+        
+        
         data = json.loads(msg.payload.decode())
-        logging.info(f"Received json{data})")
+        logging.info(f"Received json {data}")
         
         if msg.topic == "sensors/mq2":
             sensor_data['mq2'] = data.get('quality', 0)
@@ -77,8 +103,12 @@ def on_message(client, userdata, msg):
                 'temperature': sensor_data['temperature'],
                 'humidity': sensor_data['humidity']
             }
-            client.publish("alerts", json.dumps(alert))
+            client.publish(ALL_ALERTS, json.dumps(alert), retain=True)
             logging.info(f"alert is: {current_label}")
+            
+            if current_label in selected_alerts:
+                client.publish(SELECTED_ALERTS, json.dumps(alert))
+                logging.info(f"Published to {SELECTED_ALERTS}: {alert}", retain=True)
 
     except Exception as e:
         logging.error(f"Error: {e}")

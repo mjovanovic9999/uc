@@ -22,13 +22,14 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 
 class DashboardViewModel(application: Application) : AndroidViewModel(application) {
-    private val _mcuState = MutableStateFlow("standby")
+    private val _mcuState = MutableStateFlow("stop")
     val mcuState = _mcuState.asStateFlow()
 
-    private val _measurePeriod = MutableStateFlow(5)
-    val measurePeriod = _measurePeriod.asStateFlow()
+//    private val _measurePeriod = MutableStateFlow(5)
+//    val measurePeriod = _measurePeriod.asStateFlow()
 
-    private val _subscribedAlerts = MutableStateFlow(setOf("fire", "gas_leak", "high_humidity"))
+    private val _subscribedAlerts =
+        MutableStateFlow(setOf("normal", "fire", "gas_leak", "high_humidity"))
     val subscribedAlerts = _subscribedAlerts.asStateFlow()
 
     private val _notificationsEnabled = MutableStateFlow(false)
@@ -40,8 +41,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private val _MQ2DataList = MutableStateFlow<List<MQ2Data>>(emptyList())
     val MQ2DataList: StateFlow<List<MQ2Data>> = _MQ2DataList.asStateFlow()
 
-    private val _isWSConnected = MutableStateFlow(false)//mozda to delete
-    val isWSConnected: StateFlow<Boolean> = _isWSConnected.asStateFlow()
 
     private val _isMqttConnected = MutableStateFlow(false)
     val isMqttConnected: StateFlow<Boolean> = _isMqttConnected.asStateFlow()
@@ -55,28 +54,29 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     init {
         viewModelScope.launch {
-            _notificationsEnabled.value= wsServiceManager.isServiceRunning(application)
-            
+            _notificationsEnabled.value = wsServiceManager.isServiceRunning(application)
+
             connectMqtt()
 
             isMqttConnected.first { it }
 
             subscribeMqtt("sensors/mq2")
             subscribeMqtt("sensors/dht11")
-            subscribeMqtt("alerts")
+            subscribeMqtt("alerts/all")
+            subscribeMqtt("alerts/select")
+            subscribeMqtt("esp32/status")
+
             Log.d("mqtt", "launched")
         }
     }
 
     fun connectWS() {
         wsServiceManager.startService(WS_URL)
-        _isWSConnected.value = true
     }
 
     fun disconnectWS() {
         wsManager?.disconnect()
         wsServiceManager.stopService()
-        _isWSConnected.value = false
     }
 
     fun connectMqtt() {
@@ -116,9 +116,14 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
     private fun handleMqttMessage(topic: String, message: String) {
         try {
             when (topic) {
-                "alerts" -> {
-                    val alert = Json.decodeFromString<AlertType>(message)
+                "alerts/all" -> {
+                    val json = Json {
+                        ignoreUnknownKeys = true
+                    }
+                    val alert = json.decodeFromString<AlertType>(message)
                     _alerts.value = alert.type;
+                    Log.d("ALL ALERT", message)
+
                 }
 
                 "sensors/mq2" -> {
@@ -129,6 +134,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 "sensors/dht11" -> {
                     val dht11 = Json.decodeFromString<DHT11Data>(message)
                     _DHT11DataList.value = listOf(dht11) + _DHT11DataList.value
+                }
+
+                "alerts/select" -> {
+                    val selected = message.split(",")
+                    _subscribedAlerts.value = if (message != ".") selected.toSet() else setOf()
+                    Log.d("mqtt select", _subscribedAlerts.value.toString())
+                    mqttManager?.unsubscribe("alerts/select")
+                }
+
+                "esp32/status" -> {
+                    _mcuState.value = message
+                    Log.d("esp32/status", message)
                 }
 
                 else -> {
@@ -143,17 +160,25 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setMcuState(state: String) {
         _mcuState.value = state
-        // Publish to MQTT: "mcu/state" with payload state
+        mqttManager?.publish(
+            "esp32/cmd",
+            state,
+        )
+        Log.d("select", state)
     }
 
     fun blinkLed() {
-        // Publish to MQTT: "mcu/led/blink"
+        mqttManager?.publish(
+            "esp32/cmd/blink",
+            "",
+        )
+        Log.d("select", "blinked")
     }
 
-    fun setMeasurePeriod(seconds: Int) {
-        _measurePeriod.value = seconds//NE TU NEGO U SUBSCRIBE AL AJDE MOZD AI MOZE
-        // Publish to MQTT: "mcu/period" with payload seconds
-    }
+//    fun setMeasurePeriod(seconds: Int) {
+//        _measurePeriod.value = seconds//NE TU NEGO U SUBSCRIBE AL AJDE MOZD AI MOZE
+//        // Publish to MQTT: "mcu/period" with payload seconds
+//    }
 
     fun toggleAlertSubscription(alert: String) {
         _subscribedAlerts.value = if (_subscribedAlerts.value.contains(alert)) {
@@ -161,7 +186,12 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         } else {
             _subscribedAlerts.value + alert
         }
-        // Subscribe/unsubscribe from MQTT topic: "alerts/$alert"
+        mqttManager?.publish(
+            "alerts/select",
+            if (_subscribedAlerts.value.isNotEmpty()) _subscribedAlerts.value.joinToString(",") else ".",
+            retained = true
+        )
+        Log.d("select", _subscribedAlerts.value.joinToString(","))
     }
 
     fun toggleNotifications(enabled: Boolean) {
@@ -172,7 +202,6 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         super.onCleared()
-//        disconnectWS()//?????????????
         disconnectMqtt()
         viewModelScope.cancel()
 

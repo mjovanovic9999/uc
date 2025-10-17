@@ -29,9 +29,7 @@ class MQTTWebSocketBridge:
         self.mqtt_client.on_connect = self.on_mqtt_connect
         self.mqtt_client.on_message = self.on_mqtt_message
 
-        # Connect to MQTT broker
         try:
-            # self.mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
             self.mqtt_client.connect_async(MQTT_BROKER, MQTT_PORT, 60)
             self.mqtt_client.loop_start()
         except Exception as e:
@@ -40,9 +38,7 @@ class MQTTWebSocketBridge:
     def on_mqtt_connect(self, client, userdata, flags, rc):
         logging.info(f"Connected to MQTT broker with code {rc}")
 
-        client.subscribe("sensors/mq2")
-        client.subscribe("sensors/dht11")
-        client.subscribe("alerts")
+        client.subscribe("alerts/selected")
 
     def on_mqtt_message(self, client, userdata, msg):
         logging.info(
@@ -84,8 +80,7 @@ class MQTTWebSocketBridge:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     try:
                         data = json.loads(msg.data)
-                        if 'action' in data:
-                            self.handle_command(data)
+                        logging.info(data)
                     except json.JSONDecodeError:
                         logging.error("Invalid JSON from WebSocket")
                 elif msg.type == aiohttp.WSMsgType.ERROR:
@@ -96,12 +91,6 @@ class MQTTWebSocketBridge:
                 f"WebSocket disconnected. Total: {len(self.websockets)}")
 
         return ws
-
-    def handle_command(self, data):
-        action = data.get('action')
-        logging.info(f"Received command: {action}")
-
-        self.mqtt_client.publish("commands", json.dumps(data))
 
     async def health_check(self, request):
         return web.json_response({

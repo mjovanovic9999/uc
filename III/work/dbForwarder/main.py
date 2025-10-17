@@ -8,7 +8,7 @@ import logging
 MQTT_BROKER = 'mosquitto'
 MQTT_PORT =  1883
 INFLUXDB_URL = 'http://influxdb:8181'
-INFLUXDB_TOKEN = 'apiv3_maFmbho3ZAMM7w7xrE6dAuLe75C87Kmz0FnD1wEklDHZaDYgVBsQOxxuUKHd0qONiCfG2gx-UdQNFcUZvO22Jw'
+INFLUXDB_TOKEN = 'apiv3_Ev09H5kgRiWjyUWqdSCTA51ZGXvokM4hScZGrA69Axd-hmfxDrmN3i-VmR1zhjyIrasO0NsEuPmcWH3mrNbs4Q'
 INFLUXDB_ORG = 'uc'
 INFLUXDB_BUCKET = 'uc'
 

@@ -52,7 +52,7 @@ fun AlertCard(alert: String) {
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = alert,
+                    text = alert.replace("_"," ").replaceFirstChar { c -> c.uppercase() },
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
